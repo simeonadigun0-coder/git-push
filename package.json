@@ -1,0 +1,15 @@
+{
+  "name": "voting-system",
+  "version": "1.0.0",
+  "description": "Secure token-based election voting portal — Vercel edition",
+  "private": true,
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "dev": "vercel dev"
+  },
+  "devDependencies": {
+    "vercel": "^37.0.0"
+  }
+}

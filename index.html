@@ -1,0 +1,1104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#00a651">
+<title>Election Voting Portal</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --green:#00a651;--green2:#007a3d;
+  --gold:#f5a623;--gold2:#d4881a;
+  --surface:#fff;--border:#e2e8e2;
+  --text:#161c16;--muted:#607060;
+  --radius:14px;--shadow:0 4px 24px rgba(0,0,0,.13);
+}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  min-height:100vh;color:var(--text);background:#0d2b1a;overflow-x:hidden;
+}
+.bg{position:fixed;inset:0;z-index:0;overflow:hidden}
+.bg svg{width:100%;height:100%}
+.wrap{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column}
+
+/* ── TOP BAR ───────────────────────────────────────────────── */
+.topbar{
+  background:rgba(0,0,0,.45);backdrop-filter:blur(10px);
+  border-bottom:1px solid rgba(255,255,255,.1);
+  padding:14px 20px;display:flex;align-items:center;justify-content:space-between;
+}
+.topbar-logo{display:flex;align-items:center;gap:10px;color:#fff;font-weight:700;font-size:16px}
+.topbar-dot{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--green),var(--gold));display:flex;align-items:center;justify-content:center;font-size:16px}
+.flag{display:flex;gap:2px}
+.fs{width:11px;height:18px;border-radius:2px}
+.fg{background:#00a651}.fw{background:#fff}
+
+/* ── HERO ──────────────────────────────────────────────────── */
+.hero{flex:1;display:flex;align-items:flex-start;justify-content:center;padding:28px 16px 48px}
+.hero-inner{width:100%;max-width:540px}
+.badge{display:inline-flex;align-items:center;gap:6px;background:rgba(245,166,35,.18);border:1px solid rgba(245,166,35,.4);color:#f5d27a;border-radius:20px;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:5px 14px;margin-bottom:16px}
+.pulse{width:7px;height:7px;border-radius:50%;background:var(--gold);animation:pulse 1.8s ease infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
+.hero-title{font-size:clamp(24px,6vw,38px);font-weight:800;color:#fff;line-height:1.2;margin-bottom:10px}
+.hero-title span{color:var(--gold)}
+.hero-sub{font-size:14px;color:rgba(255,255,255,.65);margin-bottom:32px;line-height:1.6}
+
+/* ── PORTAL CARDS ──────────────────────────────────────────── */
+.portal-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}
+.portal-card{
+  background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);
+  border-radius:var(--radius);padding:22px 16px 20px;cursor:pointer;text-align:center;
+  touch-action:manipulation;-webkit-tap-highlight-color:rgba(255,255,255,.08);
+  transition:background .15s,transform .15s;
+}
+.portal-card:active{background:rgba(255,255,255,.15);transform:scale(.98)}
+.portal-card.primary{background:linear-gradient(135deg,var(--green),var(--green2));border-color:var(--green)}
+.portal-icon{font-size:30px;margin-bottom:10px}
+.portal-label{font-size:15px;font-weight:700;color:#fff;margin-bottom:3px}
+.portal-desc{font-size:12px;color:rgba(255,255,255,.62)}
+.portal-card.primary .portal-desc{color:rgba(255,255,255,.85)}
+
+/* ── FORM PANEL ────────────────────────────────────────────── */
+.form-panel{background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;margin-bottom:24px}
+.panel-header{background:linear-gradient(135deg,var(--green2),var(--green));padding:16px 18px 14px;display:flex;align-items:center;gap:12px}
+.panel-header h2{font-size:17px;font-weight:700;color:#fff}
+.panel-header p{font-size:13px;color:rgba(255,255,255,.75);margin-top:2px}
+.back-btn{background:rgba(255,255,255,.15);border:none;border-radius:8px;width:34px;height:34px;cursor:pointer;color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;touch-action:manipulation}
+.back-btn:active{background:rgba(255,255,255,.28)}
+.panel-body{padding:20px 18px}
+
+/* ── TABS ──────────────────────────────────────────────────── */
+.tabs{display:flex;border-bottom:1.5px solid var(--border);overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tab{flex:1;padding:11px 8px;font-size:13px;font-weight:600;background:none;border:none;border-bottom:2.5px solid transparent;margin-bottom:-1.5px;cursor:pointer;color:var(--muted);touch-action:manipulation;white-space:nowrap;min-width:0}
+.tab.active{color:var(--green);border-bottom-color:var(--green)}
+
+/* ── INPUTS ────────────────────────────────────────────────── */
+.field{margin-bottom:14px}
+.field label{display:block;font-size:13px;font-weight:600;color:var(--muted);margin-bottom:5px}
+input[type=text],input[type=number],input[type=password]{
+  width:100%;padding:13px 14px;border:1.5px solid var(--border);border-radius:9px;
+  font-size:16px;color:var(--text);background:#fff;outline:none;
+  -webkit-appearance:none;min-height:50px;
+  transition:border-color .15s,box-shadow .15s;
+}
+input:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(0,166,81,.12)}
+.pw-wrap{position:relative}
+.pw-wrap input{padding-right:46px}
+.eye-btn{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted);display:flex;align-items:center;touch-action:manipulation;padding:4px}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:400px){.field-row{grid-template-columns:1fr}}
+
+/* ── BUTTONS ───────────────────────────────────────────────── */
+.btn{padding:12px 18px;border-radius:9px;font-size:15px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);background:#fff;color:var(--text);min-height:50px;-webkit-appearance:none;touch-action:manipulation;-webkit-tap-highlight-color:rgba(0,0,0,.04);transition:background .12s;white-space:nowrap}
+.btn:active{opacity:.8}
+.btn-green{background:var(--green);color:#fff;border-color:var(--green)}
+.btn-green:active{background:var(--green2)}
+.btn-danger{color:#dc2626;border-color:#fca5a5}
+.btn-danger:active{background:#fef2f2}
+.btn-sm{padding:8px 14px;font-size:13px;min-height:40px}
+.btn-full{width:100%;padding:15px;font-size:16px}
+.btn:disabled{opacity:.5;cursor:default}
+.btn-wa{background:#25D366;color:#fff;border-color:#25D366;display:inline-flex;align-items:center;gap:6px}
+.row{display:flex;gap:8px;align-items:center;margin-bottom:10px}
+.row>input{flex:1}
+
+/* ── POSITION GROUP (ballot) ───────────────────────────────── */
+.position-group{margin-bottom:22px}
+.position-label{
+  font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;
+  color:var(--green2);background:#e6f6ed;border:1.5px solid #b3dfc6;
+  border-radius:8px;padding:6px 12px;margin-bottom:10px;display:inline-block;
+}
+.position-required{
+  font-size:11px;color:#dc2626;font-weight:600;margin-left:8px;
+}
+
+/* ── CONTESTANT OPTION ─────────────────────────────────────── */
+.contestant-opt{
+  display:flex;align-items:center;gap:14px;padding:14px 16px;
+  border:1.5px solid var(--border);border-radius:var(--radius);
+  cursor:pointer;margin-bottom:8px;min-height:60px;
+  touch-action:manipulation;-webkit-tap-highlight-color:rgba(0,166,81,.08);
+  user-select:none;-webkit-user-select:none;
+  transition:border-color .12s,background .12s;
+}
+.contestant-opt:active{background:#f0faf4;border-color:var(--green)}
+.contestant-opt.selected{border-color:var(--green);background:#f0faf4}
+.radio{width:22px;height:22px;border-radius:50%;border:2px solid #ccc;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:border-color .12s,background .12s}
+.contestant-opt.selected .radio{background:var(--green);border-color:var(--green)}
+.contestant-opt.selected .radio::after{content:'';width:8px;height:8px;border-radius:50%;background:#fff}
+.c-name{font-size:15px;font-weight:700}
+.c-pos-tag{
+  font-size:11px;font-weight:600;color:var(--green2);
+  background:#e6f6ed;border:1px solid #b3dfc6;
+  border-radius:20px;padding:3px 10px;white-space:nowrap;
+}
+
+/* ── ADMIN CONTESTANT LIST ─────────────────────────────────── */
+.ac-row{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--border)}
+.ac-row:last-child{border-bottom:none}
+.ac-name{flex:1;font-size:14px;font-weight:700}
+.ac-pos{font-size:12px;font-weight:600;color:var(--green2);background:#e6f6ed;border:1px solid #b3dfc6;border-radius:20px;padding:2px 9px;white-space:nowrap}
+
+/* ── TOKEN ROWS ────────────────────────────────────────────── */
+.token-row{border:1.5px solid var(--border);border-radius:10px;margin-bottom:9px;overflow:hidden}
+.token-top{display:flex;align-items:center;gap:10px;padding:10px 13px;background:#fafcfa}
+.token-code{font-family:'SF Mono','Fira Code',monospace;font-size:15px;font-weight:700;letter-spacing:1.5px;flex-shrink:0}
+.token-link-row{padding:8px 12px 12px;border-top:1px solid var(--border);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.token-url-input{flex:1;min-width:0;font-family:monospace;font-size:12px;color:var(--muted);background:#f5f7f5;border:1px solid var(--border);border-radius:6px;padding:7px 10px;white-space:nowrap;overflow:hidden;cursor:text;min-height:36px;-webkit-appearance:none;outline:none}
+.token-url-input:focus{border-color:var(--green)}
+.badge{font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;white-space:nowrap}
+.badge-ok{background:#f0fdf4;color:#16a34a}
+.badge-used{background:#fef2f2;color:#dc2626}
+
+/* ── STATS ─────────────────────────────────────────────────── */
+.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+.stat-box{background:#f5fbf7;border:1.5px solid #c5e8d5;border-radius:10px;padding:14px 8px;text-align:center}
+.stat-num{font-size:24px;font-weight:800;color:var(--green)}
+.stat-label{font-size:11px;color:var(--muted);margin-top:2px;font-weight:500}
+
+/* ── RESULTS ────────────────────────────────────────────────── */
+/* One card per position — clearly separated */
+.result-position-card{
+  border:1.5px solid #b3dfc6;border-radius:12px;
+  overflow:hidden;margin-bottom:16px;
+}
+.result-position-header{
+  background:linear-gradient(135deg,var(--green2),var(--green));
+  padding:10px 16px;display:flex;align-items:center;justify-content:space-between;
+}
+.result-position-name{
+  font-size:13px;font-weight:800;text-transform:uppercase;
+  letter-spacing:.07em;color:#fff;
+}
+.result-position-votes{
+  font-size:12px;font-weight:600;color:rgba(255,255,255,.8);
+  background:rgba(0,0,0,.2);border-radius:20px;padding:2px 10px;
+}
+.result-candidates{padding:14px 16px;background:#fff;display:flex;flex-direction:column;gap:12px}
+.result-candidate{background:#f8fdf9;border:1px solid #d4eedd;border-radius:9px;padding:12px 14px}
+.result-candidate.winner{background:#f0faf4;border-color:#7dd3a8;border-width:1.5px}
+.r-cand-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:8px}
+.r-cand-left{display:flex;align-items:center;gap:8px;flex:1;min-width:0}
+.r-cand-name{font-size:14px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.r-cand-right{display:flex;flex-direction:column;align-items:flex-end;gap:2px;flex-shrink:0}
+.r-cand-pct{font-size:18px;font-weight:800;color:var(--green)}
+.r-cand-count{font-size:11px;color:var(--muted);font-weight:500}
+.r-winner-badge{font-size:10px;font-weight:700;background:var(--green);color:#fff;border-radius:20px;padding:2px 8px;white-space:nowrap}
+.bar-track{background:#dff0e6;border-radius:4px;height:8px;overflow:hidden}
+.bar-fill{background:linear-gradient(90deg,var(--green),var(--gold));border-radius:4px;height:100%;transition:width .6s ease}
+
+/* ── ALERTS ────────────────────────────────────────────────── */
+.alert{padding:11px 14px;border-radius:9px;font-size:14px;margin-top:10px;line-height:1.5}
+.alert-err{background:#fef2f2;color:#dc2626;border:1px solid #fca5a5}
+.alert-ok{background:#f0fdf4;color:#16a34a;border:1px solid #86efac}
+.alert-warn{background:#fffbeb;color:#92400e;border:1px solid #fcd34d}
+
+/* ── SUCCESS ───────────────────────────────────────────────── */
+.success-wrap{text-align:center;padding:28px 16px 24px}
+.check-circle{width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--green),#00c96b);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;box-shadow:0 4px 18px rgba(0,166,81,.35)}
+.voted-summary{text-align:left;margin-top:18px;border:1.5px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.voted-row{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid var(--border);font-size:14px}
+.voted-row:last-child{border-bottom:none}
+.voted-pos{color:var(--muted);font-size:13px}
+.voted-name{font-weight:700;color:var(--green2)}
+
+/* ── GAS SETUP BANNER (removed — using Vercel API) ─────────── */
+
+/* ── PILLS ─────────────────────────────────────────────────── */
+.pills{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+.pill{padding:5px 14px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);background:#fff;color:var(--muted);touch-action:manipulation}
+.pill.active{background:var(--green);color:#fff;border-color:var(--green)}
+
+/* ── MISC ──────────────────────────────────────────────────── */
+.sep{height:1px;background:var(--border);margin:14px 0}
+.empty{text-align:center;padding:22px;color:var(--muted);font-size:14px}
+.hidden{display:none!important}
+.token-input{font-family:'SF Mono','Fira Code',monospace;letter-spacing:6px;font-size:24px;text-transform:uppercase;text-align:center;padding:16px!important}
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-overlay{position:fixed;inset:0;z-index:9000;background:rgba(13,43,26,.75);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.loading-box{background:#fff;border-radius:14px;padding:28px 32px;text-align:center}
+.loading-box p{margin-top:12px;font-size:14px;color:var(--muted);font-weight:500}
+.modal-overlay{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(4px)}
+.modal-box{background:#fff;border-radius:16px;padding:22px;width:100%;max-width:440px;box-shadow:0 8px 40px rgba(0,0,0,.3)}
+.modal-box textarea{width:100%;border:1.5px solid var(--border);border-radius:8px;padding:10px;font-family:monospace;font-size:12px;resize:none;outline:none;background:#f5fbf7;color:var(--text);line-height:1.5}
+.modal-box textarea:focus{border-color:var(--green)}
+</style>
+</head>
+<body>
+
+<!-- BACKGROUND -->
+<div class="bg">
+<svg viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0a1f12"/>
+      <stop offset="65%" stop-color="#0d2b1a"/>
+      <stop offset="100%" stop-color="#142e1c"/>
+    </linearGradient>
+    <radialGradient id="g1" cx="20%" cy="30%" r="45%">
+      <stop offset="0%" stop-color="#00a651" stop-opacity=".18"/>
+      <stop offset="100%" stop-color="#00a651" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="g2" cx="80%" cy="70%" r="40%">
+      <stop offset="0%" stop-color="#f5a623" stop-opacity=".14"/>
+      <stop offset="100%" stop-color="#f5a623" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="pat" x="0" y="0" width="80" height="80" patternUnits="userSpaceOnUse">
+      <polygon points="40,5 75,40 40,75 5,40" fill="none" stroke="rgba(0,166,81,.13)" stroke-width="1.2"/>
+      <polygon points="40,18 62,40 40,62 18,40" fill="none" stroke="rgba(245,166,35,.08)" stroke-width="1"/>
+      <circle cx="40" cy="40" r="3" fill="rgba(0,166,81,.09)"/>
+      <polygon points="0,0 14,0 0,14" fill="rgba(245,166,35,.05)"/>
+      <polygon points="80,0 80,14 66,0" fill="rgba(245,166,35,.05)"/>
+      <polygon points="0,80 14,80 0,66" fill="rgba(245,166,35,.05)"/>
+      <polygon points="80,80 66,80 80,66" fill="rgba(245,166,35,.05)"/>
+    </pattern>
+  </defs>
+  <rect width="1440" height="900" fill="url(#bgG)"/>
+  <rect width="1440" height="900" fill="url(#pat)"/>
+  <rect width="1440" height="900" fill="url(#g1)"/>
+  <rect width="1440" height="900" fill="url(#g2)"/>
+  <circle cx="120" cy="180" r="110" fill="none" stroke="rgba(0,166,81,.1)" stroke-width="1.5"/>
+  <circle cx="120" cy="180" r="65" fill="rgba(0,166,81,.05)" stroke="rgba(0,166,81,.1)" stroke-width="1"/>
+  <circle cx="1320" cy="720" r="130" fill="none" stroke="rgba(245,166,35,.09)" stroke-width="1.5"/>
+  <polygon points="280,60 320,60 340,95 320,130 280,130 260,95" fill="rgba(0,166,81,.06)" stroke="rgba(0,166,81,.13)" stroke-width="1.2"/>
+  <polygon points="1160,130 1200,130 1220,165 1200,200 1160,200 1140,165" fill="rgba(245,166,35,.06)" stroke="rgba(245,166,35,.13)" stroke-width="1.2"/>
+  <g opacity=".45"><circle cx="450" cy="80" r="1.5" fill="#00a651"/><circle cx="720" cy="50" r="1.2" fill="#f5a623"/><circle cx="990" cy="90" r="1.5" fill="#00a651"/><circle cx="200" cy="750" r="1.5" fill="#00a651"/><circle cx="900" cy="820" r="1.2" fill="#f5a623"/></g>
+  <g opacity=".04"><line x1="0" y1="0" x2="900" y2="900" stroke="#00a651" stroke-width="80"/><line x1="700" y1="0" x2="1600" y2="900" stroke="#f5a623" stroke-width="25"/></g>
+  <rect x="1410" y="0" width="10" height="900" fill="#00a651" opacity=".2"/>
+  <rect x="1420" y="0" width="10" height="900" fill="#fff" opacity=".06"/>
+  <rect x="1430" y="0" width="10" height="900" fill="#00a651" opacity=".2"/>
+</svg>
+</div>
+
+<!-- LOADING OVERLAY -->
+<div id="loadingOverlay" class="loading-overlay hidden">
+  <div class="loading-box">
+    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#00a651" stroke-width="2.5" stroke-linecap="round">
+      <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83">
+        <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur=".8s" repeatCount="indefinite"/>
+      </path>
+    </svg>
+    <p id="loadingMsg">Please wait…</p>
+  </div>
+</div>
+
+<div class="wrap">
+<div class="topbar">
+  <div class="topbar-logo">
+    <div class="topbar-dot">🗳️</div>
+    <span>VoteNG</span>
+  </div>
+  <div class="flag"><div class="fs fg"></div><div class="fs fw"></div><div class="fs fg"></div></div>
+</div>
+
+<div class="hero">
+<div class="hero-inner">
+
+  <!-- HOME -->
+  <div id="homeScreen">
+    <div class="badge"><div class="pulse"></div>Election in Progress</div>
+    <h1 class="hero-title">Your Vote,<br><span>Your Voice.</span></h1>
+    <p class="hero-sub">Secure, one-person one-vote election portal.<br>Works on any phone or computer.</p>
+    <div class="portal-grid">
+      <div class="portal-card primary" onclick="goVoter()">
+        <div class="portal-icon">🗳️</div>
+        <div class="portal-label">I want to Vote</div>
+        <div class="portal-desc">Enter your code and cast your vote</div>
+      </div>
+      <div class="portal-card" onclick="goAdmin()">
+        <div class="portal-icon">🔐</div>
+        <div class="portal-label">Admin Login</div>
+        <div class="portal-desc">Manage poll, codes &amp; results</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VOTER: TOKEN ENTRY -->
+  <div id="voterTokenScreen" class="hidden">
+    <div class="form-panel">
+      <div class="panel-header">
+        <button class="back-btn" onclick="goHome()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+        </button>
+        <div><h2>Cast Your Vote</h2><p>Enter the code from your invitation</p></div>
+      </div>
+      <div class="panel-body">
+        <div class="field">
+          <label>Your voter code</label>
+          <input type="text" id="tokenInput" class="token-input"
+                 placeholder="XXXX-XXXX" maxlength="9"
+                 autocomplete="off" autocorrect="off"
+                 autocapitalize="characters" spellcheck="false"
+                 oninput="fmtToken(this)"
+                 onkeydown="if(event.key==='Enter')doValidate()">
+        </div>
+        <div id="tokenErr" class="hidden"></div>
+        <button class="btn btn-green btn-full" style="margin-top:10px" onclick="doValidate()">Continue →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- VOTER: BALLOT (multi-position) -->
+  <div id="ballotScreen" class="hidden">
+    <div class="form-panel">
+      <div class="panel-header">
+        <button class="back-btn" onclick="showScreen('voterTokenScreen')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+        </button>
+        <div><h2 id="ballotTitle">Ballot</h2><p>Select one candidate per position</p></div>
+      </div>
+      <div class="panel-body">
+        <div id="ballotPositions"></div>
+        <div id="voteErr" class="hidden"></div>
+        <button id="submitBtn" class="btn btn-green btn-full" style="margin-top:16px" onclick="doVote()">✓ Submit All Votes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- VOTER: SUCCESS -->
+  <div id="successScreen" class="hidden">
+    <div class="form-panel">
+      <div class="panel-body success-wrap">
+        <div class="check-circle">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>
+        </div>
+        <h2 style="font-size:20px;font-weight:800;margin-bottom:6px">Votes Cast! 🎉</h2>
+        <p style="font-size:14px;color:var(--muted)">Your choices have been recorded.</p>
+        <div class="voted-summary" id="votedSummary"></div>
+        <button class="btn btn-green" style="margin-top:20px;padding:12px 28px" onclick="goHome()">← Back to Home</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADMIN: LOGIN -->
+  <div id="adminLoginScreen" class="hidden">
+    <div class="form-panel">
+      <div class="panel-header">
+        <button class="back-btn" onclick="goHome()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+        </button>
+        <div><h2>Admin Login</h2><p>Enter your password to continue</p></div>
+      </div>
+      <div class="panel-body">
+
+        <div class="field">
+          <label>Password</label>
+          <div class="pw-wrap">
+            <input type="password" id="pwInput" onkeydown="if(event.key==='Enter')doAdminLogin()">
+            <button class="eye-btn" onclick="togglePw()" type="button">
+              <svg id="eyeOpen" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+              </svg>
+              <svg id="eyeClosed" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden">
+                <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/>
+                <path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/>
+                <line x1="1" y1="1" x2="23" y2="23"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div id="loginErr" class="hidden"></div>
+        <button class="btn btn-green btn-full" style="margin-top:10px" onclick="doAdminLogin()">Sign In →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADMIN: DASHBOARD -->
+  <div id="adminDashScreen" class="hidden">
+    <div class="form-panel">
+      <div class="panel-header">
+        <button class="back-btn" onclick="goHome()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+        </button>
+        <div><h2>Admin Dashboard</h2><p id="dashTitle" style="font-style:italic"></p></div>
+      </div>
+      <div class="tabs" style="padding:0 14px" id="dashTabs">
+        <button class="tab active" onclick="switchTab(this,'tabSetup')">⚙️ Setup</button>
+        <button class="tab" onclick="switchTab(this,'tabTokens')">🔑 Codes</button>
+        <button class="tab" onclick="switchTab(this,'tabResults')">📊 Results</button>
+      </div>
+
+      <!-- Setup tab -->
+      <div id="tabSetup" class="panel-body" style="padding-top:14px">
+        <div class="field">
+          <label>Poll title</label>
+          <div class="row">
+            <input type="text" id="pollTitleInput" placeholder="e.g. SUG Election 2025">
+            <button class="btn btn-sm btn-green" onclick="savePollTitle()">Save</button>
+          </div>
+          <div id="titleSaveMsg" class="hidden"></div>
+        </div>
+        <div class="sep"></div>
+        <p style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:12px">
+          Contestants &amp; Positions
+        </p>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:12px;line-height:1.5">
+          Add each contestant with the position they are running for. Voters will see all positions grouped on their ballot.
+        </p>
+        <div class="field-row" style="margin-bottom:10px">
+          <div class="field" style="margin-bottom:0">
+            <label>Contestant name</label>
+            <input type="text" id="cName" placeholder="e.g. Chidi Okonkwo"
+                   onkeydown="if(event.key==='Enter')document.getElementById('cPos').focus()">
+          </div>
+          <div class="field" style="margin-bottom:0">
+            <label>Position contesting</label>
+            <input type="text" id="cPos" placeholder="e.g. President SUG"
+                   onkeydown="if(event.key==='Enter')addContestant()">
+          </div>
+        </div>
+        <button class="btn btn-sm btn-green" onclick="addContestant()" style="margin-bottom:8px">+ Add Contestant</button>
+        <div id="cErr" class="hidden"></div>
+        <div class="sep"></div>
+        <div id="cList"><div class="empty">No contestants yet</div></div>
+      </div>
+
+      <!-- Tokens tab -->
+      <div id="tabTokens" class="panel-body hidden" style="padding-top:14px">
+        <div class="alert alert-warn" style="margin-top:0;margin-bottom:14px;font-size:13px">
+          📱 <strong>Important:</strong> Share links via the WhatsApp button. Tell voters to open the link in <strong>Chrome or Safari</strong>, not inside WhatsApp.
+        </div>
+        <div class="field">
+          <label>Generate voter codes</label>
+          <div class="row">
+            <input type="number" id="codeCount" value="10" min="1" max="200" style="max-width:90px;flex:none">
+            <span style="font-size:14px;color:var(--muted)">codes</span>
+            <button class="btn btn-sm btn-green" onclick="generateTokens()">Generate</button>
+            <button class="btn btn-sm btn-danger" style="margin-left:auto" onclick="deleteUnused()">Delete unused</button>
+          </div>
+          <div id="genMsg" class="hidden"></div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+          <span id="tokenSummary" style="font-size:13px;color:var(--muted)"></span>
+          <button class="btn btn-sm" onclick="copyAllLinks()">Copy all unused links</button>
+        </div>
+        <div class="pills">
+          <span class="pill active" onclick="setFilter(this,'all')">All</span>
+          <span class="pill" onclick="setFilter(this,'fresh')">Unused</span>
+          <span class="pill" onclick="setFilter(this,'used')">Used</span>
+        </div>
+        <div id="tokenList"></div>
+      </div>
+
+      <!-- Results tab -->
+      <div id="tabResults" class="panel-body hidden" style="padding-top:14px">
+        <div class="stats-grid" id="statsGrid"></div>
+        <div id="resultsChart"><div class="empty">No votes yet</div></div>
+        <div style="text-align:right;margin-top:14px">
+          <button class="btn btn-sm btn-danger" onclick="resetAll()">🗑️ Reset all data</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div></div></div><!-- /hero-inner /hero /wrap -->
+
+<script>
+// ── State ─────────────────────────────────────────────────────
+let adminPw = '', adminData = null;
+let currentToken = '';
+let selectedVotes = {};
+let tokenFilter = 'all';
+
+// Read token from URL ?token=XXXX
+function getUrlToken() {
+  const p = new URLSearchParams(window.location.search);
+  return (p.get('token') || '').replace(/["""\u201C\u201D\s']/g, '').toUpperCase();
+}
+
+// ── Init ──────────────────────────────────────────────────────
+window.onload = function() {
+  currentToken = getUrlToken();
+  if (currentToken) {
+    showScreen('voterTokenScreen');
+    document.getElementById('tokenInput').value = fmtTokenVal(currentToken);
+    doValidate();
+    return;
+  }
+  showScreen('homeScreen');
+};
+
+// ── Admin screen init ─────────────────────────────────────────
+function initAdminLoginScreen() {
+  // Nothing to configure — API is built-in via Vercel
+}
+
+// ── API — fetch-based calls to /api/vote ──────────────────────
+function api(params) {
+  const url = '/api/vote?' + new URLSearchParams(params).toString();
+  return fetch(url, { signal: AbortSignal.timeout(20000) })
+    .then(function(res) {
+      if (!res.ok) throw new Error('Server returned ' + res.status);
+      return res.json();
+    });
+}
+
+function loading(msg) {
+  document.getElementById('loadingMsg').textContent = msg || 'Please wait…';
+  document.getElementById('loadingOverlay').classList.remove('hidden');
+}
+function doneLoading() { document.getElementById('loadingOverlay').classList.add('hidden'); }
+
+// ── Screens ───────────────────────────────────────────────────
+const ALL_SCREENS = ['homeScreen','voterTokenScreen','ballotScreen','successScreen','adminLoginScreen','adminDashScreen'];
+function showScreen(id) {
+  ALL_SCREENS.forEach(s => document.getElementById(s).classList.add('hidden'));
+  document.getElementById(id).classList.remove('hidden');
+}
+function goHome()  { showScreen('homeScreen'); }
+function goVoter() { showScreen('voterTokenScreen'); }
+function goAdmin() { initAdminLoginScreen(); showScreen('adminLoginScreen'); }
+
+// ── Eye toggle ────────────────────────────────────────────────
+function togglePw() {
+  const inp = document.getElementById('pwInput');
+  const toT = inp.type === 'password';
+  inp.type = toT ? 'text' : 'password';
+  document.getElementById('eyeOpen').classList.toggle('hidden', toT);
+  document.getElementById('eyeClosed').classList.toggle('hidden', !toT);
+}
+
+// ── Token formatting ──────────────────────────────────────────
+function fmtTokenVal(v) {
+  v = v.replace(/[^A-Z0-9]/gi,'').toUpperCase().slice(0,8);
+  if (v.length > 4) v = v.slice(0,4)+'-'+v.slice(4);
+  return v;
+}
+function fmtToken(el) { el.value = fmtTokenVal(el.value); }
+
+// ── Validate token & load ballot ─────────────────────────────
+function doValidate() {
+  currentToken = document.getElementById('tokenInput').value.replace(/[^A-Z0-9-]/gi,'').toUpperCase();
+  if (!currentToken) { setAlert('tokenErr','Please enter your voter code.','err'); return; }
+  hideEl('tokenErr');
+  loading('Checking your code…');
+  api({ action: 'validate', token: currentToken })
+    .then(function(res) {
+      doneLoading();
+      if (!res.ok) { setAlert('tokenErr', res.error, 'err'); return; }
+      document.getElementById('ballotTitle').textContent = res.pollTitle || 'Ballot';
+      buildBallot(res.contestants);
+      showScreen('ballotScreen');
+    })
+    .catch(function() { doneLoading(); setAlert('tokenErr','Connection error. Check your internet and try again.','err'); });
+}
+
+// ── Build multi-position ballot ───────────────────────────────
+// positionMap[idx] = positionString  (safe numeric IDs avoid encoding bugs)
+let positionMap = [];
+
+function buildBallot(contestants) {
+  selectedVotes = {};
+  positionMap   = [];
+  const container = document.getElementById('ballotPositions');
+
+  if (!contestants || !contestants.length) {
+    container.innerHTML = '<div class="empty">No contestants added yet.</div>'; return;
+  }
+
+  // Support both old field name (title) and new (position)
+  contestants = contestants.map(c => ({
+    name:     c.name,
+    position: c.position || c.title || 'General'
+  }));
+
+  // Group by position — preserve insertion order
+  const groupMap = {};
+  const groupOrder = [];
+  contestants.forEach(c => {
+    if (!groupMap[c.position]) { groupMap[c.position] = []; groupOrder.push(c.position); }
+    groupMap[c.position].push(c);
+  });
+
+  // Build positionMap with numeric indices
+  groupOrder.forEach((pos, pi) => { positionMap[pi] = pos; });
+
+  container.innerHTML = groupOrder.map((position, pi) => {
+    const members = groupMap[position];
+    return `
+      <div class="position-group" data-pi="${pi}">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+          <span class="position-label">${esc(position)}</span>
+          <span class="position-required" id="req-${pi}">* required</span>
+        </div>
+        ${members.map((c, ci) => `
+          <div class="contestant-opt" id="opt-${pi}-${ci}" onclick="selectC(${pi},${ci})">
+            <div class="radio"></div>
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;flex:1">
+              <span class="c-name">${esc(c.name)}</span>
+              <span class="c-pos-tag">${esc(position)}</span>
+            </div>
+          </div>`).join('')}
+      </div>`;
+  }).join('<div style="height:8px"></div>');
+
+  // Store name lookup per group
+  container._groups = groupOrder.map(pos => groupMap[pos].map(c => c.name));
+}
+
+function selectC(pi, ci) {
+  const position = positionMap[pi];
+  if (!position) return;
+
+  // Deselect all options for this position group
+  document.querySelectorAll(`.contestant-opt[id^="opt-${pi}-"]`)
+    .forEach(el => el.classList.remove('selected'));
+
+  // Select the tapped option
+  const el = document.getElementById(`opt-${pi}-${ci}`);
+  if (el) el.classList.add('selected');
+
+  // Get contestant name from stored group data
+  const container = document.getElementById('ballotPositions');
+  const name = container._groups && container._groups[pi] ? container._groups[pi][ci] : '';
+  selectedVotes[position] = name;
+
+  // Mark this position as done
+  const req = document.getElementById('req-'+pi);
+  if (req) { req.style.color = '#16a34a'; req.textContent = '✓'; }
+  hideEl('voteErr');
+}
+
+// ── Submit all votes ──────────────────────────────────────────
+function doVote() {
+  // Check every position has a selection using numeric pi indices
+  const groups = document.querySelectorAll('.position-group');
+  let allSelected = true;
+  groups.forEach(g => {
+    const pi       = parseInt(g.dataset.pi);
+    const position = positionMap[pi];
+    if (!position || !selectedVotes[position]) {
+      allSelected = false;
+      const req = document.getElementById('req-'+pi);
+      if (req) { req.style.color = '#dc2626'; req.textContent = '* required'; }
+    }
+  });
+
+  if (!allSelected) {
+    setAlert('voteErr','Please select one candidate for every position before submitting.','err');
+    return;
+  }
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Submitting…';
+
+  const votesEncoded = encodeURIComponent(JSON.stringify(selectedVotes));
+  api({ action: 'vote', token: currentToken, votes: votesEncoded })
+    .then(function(res) {
+      btn.disabled = false; btn.innerHTML = '✓ Submit All Votes';
+      if (!res.ok) { setAlert('voteErr', res.error, 'err'); return; }
+      // Build summary
+      const summary = document.getElementById('votedSummary');
+      summary.innerHTML = Object.entries(res.votedFor).map(([pos, name]) => `
+        <div class="voted-row">
+          <span class="voted-pos">${esc(pos)}</span>
+          <span class="voted-name">${esc(name)}</span>
+        </div>`).join('');
+      showScreen('successScreen');
+    })
+    .catch(function() {
+      btn.disabled = false; btn.innerHTML = '✓ Submit All Votes';
+      setAlert('voteErr','Connection error. Please try again.','err');
+    });
+}
+
+// ── Admin login ───────────────────────────────────────────────
+function doAdminLogin() {
+  const pw = document.getElementById('pwInput').value;
+  if (!pw) { setAlert('loginErr','Enter your password.','err'); return; }
+  loading('Signing in…');
+  api({ action: 'adminLogin', pw })
+    .then(function(res) {
+      doneLoading();
+      if (!res.ok) { setAlert('loginErr','Incorrect password.','err'); return; }
+      adminPw = pw; hideEl('loginErr'); loadAdminData();
+    })
+    .catch(function() { doneLoading(); setAlert('loginErr','Connection error. Check your internet.','err'); });
+}
+
+function loadAdminData() {
+  loading('Loading dashboard…');
+  api({ action: 'adminData', pw: adminPw })
+    .then(function(res) {
+      doneLoading();
+      if (!res.ok) { alert(res.error); return; }
+      adminData = res; renderDash(); showScreen('adminDashScreen');
+    })
+    .catch(function(e) { doneLoading(); alert('Connection error: '+e.message); });
+}
+
+function renderDash() {
+  document.getElementById('dashTitle').textContent = adminData.config.pollTitle || '(No title set)';
+  document.getElementById('pollTitleInput').value  = adminData.config.pollTitle || '';
+  renderContestants(); renderTokenList(); renderResults();
+}
+
+// ── Contestants ───────────────────────────────────────────────
+function renderContestants() {
+  const list = document.getElementById('cList');
+  const arr  = adminData.config.contestants || [];
+  if (!arr.length) { list.innerHTML = '<div class="empty">No contestants yet</div>'; return; }
+
+  // Group by position for display
+  const groups = {};
+  arr.forEach((c, i) => {
+    if (!groups[c.position]) groups[c.position] = [];
+    groups[c.position].push({ ...c, idx: i });
+  });
+
+  list.innerHTML = Object.entries(groups).map(([pos, members]) => `
+    <div style="margin-bottom:12px">
+      <div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--green2);margin-bottom:6px">${esc(pos)}</div>
+      ${members.map(c => `
+        <div class="ac-row">
+          <span class="ac-name">${esc(c.name)}</span>
+          <button class="btn btn-sm btn-danger" onclick="removeC(${c.idx})">Remove</button>
+        </div>`).join('')}
+    </div>`).join('<div class="sep" style="margin:8px 0"></div>');
+}
+
+function addContestant() {
+  const name = document.getElementById('cName').value.trim();
+  const pos  = document.getElementById('cPos').value.trim();
+  if (!name) { setAlert('cErr','Contestant name is required.','err'); return; }
+  if (!pos)  { setAlert('cErr','Position is required.','err'); return; }
+  const arr = adminData.config.contestants || [];
+  if (arr.some(c => c.name.toLowerCase()===name.toLowerCase() && c.position.toLowerCase()===pos.toLowerCase())) {
+    setAlert('cErr','This contestant is already added for that position.','err'); return;
+  }
+  adminData.config.contestants = [...arr, { name, position: pos }];
+  document.getElementById('cName').value = '';
+  document.getElementById('cPos').value  = '';
+  hideEl('cErr');
+  saveConfig(() => renderContestants());
+}
+
+function removeC(i) {
+  if (!confirm('Remove this contestant?')) return;
+  adminData.config.contestants.splice(i, 1);
+  renderContestants();
+  saveConfig();
+}
+
+function saveConfig(cb) {
+  const cfg = encodeURIComponent(JSON.stringify(adminData.config));
+  api({ action: 'saveConfig', pw: adminPw, config: cfg })
+    .then(res => { if (res.ok && cb) cb(); else if (!res.ok) alert(res.error); })
+    .catch(e => alert('Error: '+e.message));
+}
+
+function savePollTitle() {
+  const t = document.getElementById('pollTitleInput').value.trim();
+  if (!t) return;
+  adminData.config.pollTitle = t;
+  document.getElementById('dashTitle').textContent = t;
+  saveConfig(() => {
+    setAlert('titleSaveMsg','✓ Saved!','ok');
+    setTimeout(() => hideEl('titleSaveMsg'), 2000);
+  });
+}
+
+// ── Token list ────────────────────────────────────────────────
+function renderTokenList() {
+  const tokens = adminData.tokens || {};
+  const all    = Object.entries(tokens);
+  const fresh  = all.filter(([,v]) => !v.used);
+  const used   = all.filter(([,v]) =>  v.used);
+  document.getElementById('tokenSummary').textContent =
+    `${fresh.length} unused · ${used.length} used · ${all.length} total`;
+
+  const toShow = all.filter(([,v]) => {
+    if (tokenFilter === 'fresh') return !v.used;
+    if (tokenFilter === 'used')  return  v.used;
+    return true;
+  });
+
+  const list    = document.getElementById('tokenList');
+  const pageUrl = window.location.origin + window.location.pathname;
+
+  if (!toShow.length) {
+    list.innerHTML = `<div class="empty">${all.length ? 'No codes match filter.' : 'No codes yet — generate some above.'}</div>`;
+    return;
+  }
+
+  list.innerHTML = toShow.map(([token, data]) => {
+    const url = pageUrl + '?token=' + token;
+    if (data.used) {
+      const summary = data.votedFor && typeof data.votedFor === 'object'
+        ? Object.values(data.votedFor).join(', ')
+        : (data.votedFor || '');
+      return `<div class="token-row">
+        <div class="token-top">
+          <span class="token-code">${token}</span>
+          <span style="flex:1;font-size:12px;color:var(--muted);text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px" title="${esc(summary)}">→ ${esc(summary)}</span>
+          <span class="badge badge-used">Used</span>
+        </div></div>`;
+    }
+    return `<div class="token-row">
+      <div class="token-top">
+        <span class="token-code">${token}</span>
+        <span class="badge badge-ok" style="margin-left:auto">Unused</span>
+      </div>
+      <div class="token-link-row">
+        <input type="text" readonly class="token-url-input"
+               value="${esc(url)}" id="ui-${token}" onclick="this.select()">
+        <button class="btn btn-sm" onclick="copyVoterLink('ui-${token}',this)">Copy</button>
+        <button class="btn btn-sm btn-wa" onclick="shareWA('${escJs(url)}','${escJs(token)}')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+          Share
+        </button>
+      </div></div>`;
+  }).join('');
+}
+
+function setFilter(el, f) {
+  tokenFilter = f;
+  document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  renderTokenList();
+}
+
+function generateTokens() {
+  const count = parseInt(document.getElementById('codeCount').value) || 10;
+  loading('Generating codes…');
+  api({ action: 'genTokens', pw: adminPw, count })
+    .then(function(res) {
+      doneLoading();
+      if (!res.ok) { alert(res.error); return; }
+      res.newTokens.forEach(t => { adminData.tokens[t] = { used: false, votedFor: null }; });
+      renderTokenList();
+      setAlert('genMsg', '✓ ' + res.newTokens.length + ' codes generated.', 'ok');
+      setTimeout(() => hideEl('genMsg'), 3000);
+    })
+    .catch(e => { doneLoading(); alert('Error: '+e.message); });
+}
+
+function deleteUnused() {
+  if (!confirm('Delete all unused codes?')) return;
+  loading('Deleting…');
+  api({ action: 'deleteUnused', pw: adminPw })
+    .then(function(res) {
+      doneLoading();
+      if (!res.ok) { alert(res.error); return; }
+      Object.keys(adminData.tokens).forEach(k => { if (!adminData.tokens[k].used) delete adminData.tokens[k]; });
+      renderTokenList();
+    })
+    .catch(e => { doneLoading(); alert('Error: '+e.message); });
+}
+
+function copyAllLinks() {
+  const pageUrl = window.location.origin + window.location.pathname;
+  const fresh   = Object.keys(adminData.tokens || {}).filter(k => !adminData.tokens[k].used);
+  if (!fresh.length) { alert('No unused codes to copy.'); return; }
+  showCopyModal(fresh.map(t => pageUrl + '?token=' + t).join('\n'), fresh.length + ' voting links');
+}
+
+function shareWA(url, token) {
+  const msg = encodeURIComponent(
+    '🗳️ *You have been invited to vote!*\n\n' +
+    'Your unique voter code: *' + token + '*\n\n' +
+    '👉 Open this link in Chrome or Safari to vote:\n' + url + '\n\n' +
+    '_⚠️ Do not tap from inside WhatsApp. Copy the link and paste it in Chrome or Safari._'
+  );
+  window.open('https://wa.me/?text=' + msg, '_blank');
+}
+
+// ── Results ───────────────────────────────────────────────────
+function renderResults() {
+  const votes  = adminData.votes  || {};
+  const tokens = adminData.tokens || {};
+  const allTok = Object.values(tokens);
+  const used   = allTok.filter(v => v.used).length;
+  const total  = Object.values(votes).reduce((a, b) => a + b, 0);
+
+  document.getElementById('statsGrid').innerHTML = `
+    <div class="stat-box"><div class="stat-num">${used}</div><div class="stat-label">People Voted</div></div>
+    <div class="stat-box"><div class="stat-num">${allTok.length - used}</div><div class="stat-label">Yet to Vote</div></div>
+    <div class="stat-box"><div class="stat-num">${allTok.length}</div><div class="stat-label">Total Codes</div></div>`;
+
+  const contestants = adminData.config.contestants || [];
+  if (!contestants.length) {
+    document.getElementById('resultsChart').innerHTML = '<div class="empty">No contestants yet.</div>';
+    return;
+  }
+
+  // Group by position — preserve insertion order
+  const groupMap = {};
+  const groupOrder = [];
+  contestants.forEach(c => {
+    const pos = c.position || c.title || 'General';
+    if (!groupMap[pos]) { groupMap[pos] = []; groupOrder.push(pos); }
+    groupMap[pos].push(c);
+  });
+
+  // Build one card per position
+  document.getElementById('resultsChart').innerHTML = groupOrder.map(pos => {
+    const members = groupMap[pos];
+
+    // Sort by votes descending
+    const sorted = [...members].sort((a, b) => (votes[b.name] || 0) - (votes[a.name] || 0));
+
+    // Total votes cast for this position only
+    const posTotal = sorted.reduce((s, c) => s + (votes[c.name] || 0), 0);
+
+    const candidatesHtml = sorted.map((c, i) => {
+      const count   = votes[c.name] || 0;
+      const pct     = posTotal > 0 ? Math.round(count / posTotal * 100) : 0;
+      const isWinner = i === 0 && count > 0;
+
+      return `
+        <div class="result-candidate ${isWinner ? 'winner' : ''}">
+          <div class="r-cand-top">
+            <div class="r-cand-left">
+              ${isWinner ? '<span style="font-size:18px;flex-shrink:0">🥇</span>' : '<span style="width:18px;flex-shrink:0"></span>'}
+              <div>
+                <div class="r-cand-name">${esc(c.name)}</div>
+                <div style="font-size:11px;color:var(--green2);font-weight:600;margin-top:2px">${esc(pos)}</div>
+              </div>
+            </div>
+            <div class="r-cand-right">
+              <div class="r-cand-pct">${pct}%</div>
+              <div class="r-cand-count">${count} vote${count !== 1 ? 's' : ''}</div>
+              ${isWinner ? '<div class="r-winner-badge">Leading</div>' : ''}
+            </div>
+          </div>
+          <div class="bar-track">
+            <div class="bar-fill" style="width:${pct}%"></div>
+          </div>
+        </div>`;
+    }).join('');
+
+    return `
+      <div class="result-position-card">
+        <div class="result-position-header">
+          <span class="result-position-name">${esc(pos)}</span>
+          <span class="result-position-votes">${posTotal} vote${posTotal !== 1 ? 's' : ''}</span>
+        </div>
+        <div class="result-candidates">
+          ${candidatesHtml}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function switchTab(btn, tabId) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  ['tabSetup','tabTokens','tabResults'].forEach(id =>
+    document.getElementById(id).classList.toggle('hidden', id !== tabId));
+  if (tabId === 'tabResults') {
+    loading('Loading results…');
+    api({ action: 'adminData', pw: adminPw })
+      .then(res => { doneLoading(); if (res.ok) { adminData.votes = res.votes; adminData.tokens = res.tokens; renderResults(); } })
+      .catch(() => doneLoading());
+  }
+}
+
+function resetAll() {
+  if (!confirm('Permanently delete ALL data, codes and votes?')) return;
+  loading('Resetting…');
+  api({ action: 'reset', pw: adminPw })
+    .then(res => {
+      doneLoading();
+      if (!res.ok) { alert(res.error); return; }
+      adminData = { config: { pollTitle:'', contestants:[] }, tokens:{}, votes:{} };
+      renderDash();
+      alert('All data has been reset.');
+    })
+    .catch(e => { doneLoading(); alert('Error: '+e.message); });
+}
+
+// ── Copy helpers ──────────────────────────────────────────────
+function copyVoterLink(inputId, btn) {
+  const inp = document.getElementById(inputId);
+  if (!inp) return;
+  const orig = btn ? btn.textContent : 'Copy';
+  inp.focus(); inp.select(); inp.setSelectionRange(0, inp.value.length);
+  let ok = false;
+  try { ok = document.execCommand('copy'); } catch(e) {}
+  if (!ok && navigator.clipboard) {
+    navigator.clipboard.writeText(inp.value)
+      .then(() => flashBtn(btn, '✓ Copied!', orig))
+      .catch(() => showCopyModal(inp.value, 'the voting link'));
+    return;
+  }
+  if (ok) flashBtn(btn, '✓ Copied!', orig);
+  else    showCopyModal(inp.value, 'the voting link');
+}
+
+function flashBtn(btn, text, orig) {
+  if (!btn) return;
+  btn.textContent = text; btn.style.color = 'var(--green)';
+  setTimeout(() => { btn.textContent = orig; btn.style.color = ''; }, 2000);
+}
+
+function showCopyModal(text, label) {
+  const old = document.getElementById('copyModal');
+  if (old) old.remove();
+  const ov = document.createElement('div');
+  ov.id = 'copyModal'; ov.className = 'modal-overlay';
+  const rows = text.split('\n').length;
+  ov.innerHTML = `
+    <div class="modal-box">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <strong style="font-size:15px">Copy ${label}</strong>
+        <button onclick="document.getElementById('copyModal').remove()"
+          style="background:none;border:none;font-size:22px;cursor:pointer;color:#666;line-height:1">×</button>
+      </div>
+      <p style="font-size:13px;color:#666;margin-bottom:10px">Tap the box to select all, then press <b>Copy</b> or long-press on mobile:</p>
+      <textarea id="copyTA" readonly style="height:${Math.min(rows*26+28,160)}px">${text}</textarea>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button onclick="doModalCopy()"
+          style="flex:1;padding:13px;border-radius:8px;font-size:15px;font-weight:700;background:var(--green);color:#fff;border:none;cursor:pointer;min-height:50px;touch-action:manipulation">
+          Copy
+        </button>
+        <button onclick="document.getElementById('copyModal').remove()"
+          style="padding:13px 18px;border-radius:8px;font-size:14px;background:#f0f0f0;border:none;cursor:pointer;min-height:50px;touch-action:manipulation">
+          Close
+        </button>
+      </div>
+      <div id="modalMsg" style="display:none;margin-top:8px;font-size:13px;font-weight:600;text-align:center;color:var(--green)"></div>
+    </div>`;
+  document.body.appendChild(ov);
+  setTimeout(() => { const ta = document.getElementById('copyTA'); if(ta){ ta.focus(); ta.select(); ta.setSelectionRange(0, ta.value.length); } }, 80);
+  ov.addEventListener('click', e => { if(e.target === ov) ov.remove(); });
+}
+
+function doModalCopy() {
+  const ta  = document.getElementById('copyTA');
+  const msg = document.getElementById('modalMsg');
+  if (!ta) return;
+  ta.focus(); ta.select(); ta.setSelectionRange(0, ta.value.length);
+  let ok = false;
+  try { ok = document.execCommand('copy'); } catch(e) {}
+  if (!ok && navigator.clipboard) {
+    navigator.clipboard.writeText(ta.value)
+      .then(() => { msg.textContent='✓ Copied!'; msg.style.display='block'; setTimeout(() => { const m=document.getElementById('copyModal'); if(m) m.remove(); }, 1200); })
+      .catch(() => { msg.textContent='Long-press the text above → Copy'; msg.style.color='#dc2626'; msg.style.display='block'; });
+    return;
+  }
+  if (ok) { msg.textContent='✓ Copied!'; msg.style.display='block'; setTimeout(() => { const m=document.getElementById('copyModal'); if(m) m.remove(); }, 1200); }
+  else    { msg.textContent='Select the text above and press Ctrl+C'; msg.style.color='#dc2626'; msg.style.display='block'; }
+}
+
+// ── Utils ─────────────────────────────────────────────────────
+function hideEl(id) { document.getElementById(id).classList.add('hidden'); }
+function setAlert(id, msg, type) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.className = 'alert ' + (type==='ok' ? 'alert-ok' : type==='warn' ? 'alert-warn' : 'alert-err');
+}
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function escJs(s) { return String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
+</script>
+</body>
+</html>
